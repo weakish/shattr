@@ -1,52 +1,89 @@
+import ceylon.file { Directory, File, Path, Visitor, current, home }
 import ceylon.process { Process, createProcess }
 import ceylon.interop.java { javaClass }
 import java.lang { JString=String, System }
 import java.io { IOException }
 import java.nio { ByteBuffer }
 import java.nio.charset { Charset }
-import java.nio.file { FileStore, Files, NoSuchFileException, Path, Paths }
+import java.nio.file { FileStore, Files, Paths }
 import java.nio.file.attribute { UserDefinedFileAttributeView }
 import java.util { Collections, JList=List }
 
-"Run the module `io.github.weakish.shattr`."
-throws (`class AssertionError`, "No command line argument.")
 shared void run() {
-    if (exists first_arg = process.arguments.first) {
-        Path filePath = Paths.get(first_arg);
-        try {
-            if (isXattrEnabled(filePath)) {
-                if (exists sha256 = readSha(filePath)) {
-                    if (exists duplicated = isDuplicated(sha256)) {
-                        print(duplicated);
-                    } else {
-                        print("File `_hashList` not found.");
-                        System.exit(66); // EX_NOINPUT
-                    }
-                } else {
-                    writeSha(filePath);
-                }
-            } else {
-                print("Error: xattr is not enabled.
-                       Try remount the file system, e.g.
+    if (exists xattrEnabled = isXattrEnabled()) {
+        if (xattrEnabled) {
+            current.visit(visitor);
+        } else {
+            print("Error: xattr is not enabled.
+                   Try remount the file system, e.g.
 
-                           sudo mount -o remount,user_xattr MOUNT_POINT");
-            }
-        } catch(NoSuchFileException e) {
-            print("Error: Cannot found file \"``e.file``\".");
-            System.exit(66); // EX_NOINPUT
+                       sudo mount -o remount,user_xattr MOUNT_POINT");
         }
     } else {
-        throw AssertionError("Need to specify file path.");
+        print("Error: it seems that current working directory is invalid.
+               Please try again later.
+               If it still does not work, please report a bug.");
+        System.exit(75); // EX_TEMPFAIL
     }
 }
 
-Boolean isXattrEnabled(Path filePath) {
+Boolean? isXattrEnabled() {
+    if (is Directory workingDirectory = current.resource) {
+        return checkDirectoryXattr(workingDirectory);
+    } else {
+        // Something terrible happens on the system.
+        return null;
+    }
+}
+
+Boolean? checkDirectoryXattr(Directory directory) {
+    // This directory has files as direct children:
+    if (exists toCheckFile = directory.files().first) {
+        return checkFileXattr(toCheckFile.path);
+    } else {
+        // The current directory's direct children are all directories.
+        for (subdirectory in directory.childDirectories()) {
+            checkDirectoryXattr(subdirectory);
+        }
+        // FIXME What if we encountered an empty directory,
+        // or a directory full of symbolic links?
+        return null;
+    }
+}
+
+Boolean checkFileXattr(Path path) {
+    value filePath = Paths.get(path.string);
     FileStore store = Files.getFileStore(filePath);
     return store.supportsFileAttributeView("user");
 }
 
+
+object visitor extends Visitor() {
+    file(File f) => reportDuplicated(f.path);
+}
+
+"Report duplicated files. Silent on non duplicated."
+void reportDuplicated(Path path) {
+    if (exists sha256 = readSha(path)) {
+        if (exists duplicated = isDuplicated(sha256)) {
+            if (duplicated) {
+                print("``path``");
+            } else {
+                // silent
+            }
+        } else {
+            print("Cannot read hash list file.");
+            System.exit(66); // EX_NOINPUT
+        }
+    } else {
+        writeSha(path);
+    }
+}
+
+
 "Given a valid file path, read its `user.shatag.sha256` xattr."
-String? readSha(Path filePath) {
+String? readSha(Path path) {
+    value filePath = Paths.get(path.string);
     UserDefinedFileAttributeView view =
         Files.getFileAttributeView(
             filePath,
@@ -69,7 +106,7 @@ void writeSha(Path filePath) {
     suppressWarnings("unusedDeclaration")
     Process shatag = createProcess {
         command = "shatag";
-        arguments = ["-qrt"];
+        arguments = ["-t"];
     };
 }
 
@@ -87,10 +124,13 @@ Boolean? isDuplicated(String sha256) {
     }
 }
 
-"Read file `_hashList` into RAM, which contains all SHA-256 hashes, sorted."
+"Read file <hashList> into RAM,
+ which contains all SHA-256 hashes, sorted."
 throws (`class IOException`, "File not found.")
 JList<JString> readHashList() {
-    Path hashList = Paths.get("/pool/repos/incubator/shattr/_hashList");
+    String defaultPath = "``home``/.shatagdb-hash-list.txt";
+    String hashListPath = process.arguments.first else defaultPath;
+    value hashList = Paths.get(hashListPath);
     value hashes = Files.readAllLines(hashList, Charset.defaultCharset());
     return hashes;
 }
