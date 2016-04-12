@@ -34,7 +34,7 @@ Boolean isXattrEnabled(Path filePath) {
     return store.supportsFileAttributeView("user");
 }
 
-throws (`class NoSuchFileException`)
+"Given a valid file path, read its `user.shatag.sha256` xattr."
 String? readSha(Path filePath) {
     UserDefinedFileAttributeView view =
         Files.getFileAttributeView(
