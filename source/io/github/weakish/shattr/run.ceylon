@@ -1,10 +1,12 @@
+import ceylon.process { Process, createProcess }
 import ceylon.interop.java { javaClass }
-import java.lang { System }
+import java.lang { JString=String, System }
 import java.io { IOException }
 import java.nio { ByteBuffer }
 import java.nio.charset { Charset }
 import java.nio.file { FileStore, Files, NoSuchFileException, Path, Paths }
 import java.nio.file.attribute { UserDefinedFileAttributeView }
+import java.util { Collections, JList=List }
 
 "Run the module `io.github.weakish.shattr`."
 throws (`class AssertionError`, "No command line argument.")
@@ -14,7 +16,12 @@ shared void run() {
         try {
             if (isXattrEnabled(filePath)) {
                 if (exists sha256 = readSha(filePath)) {
-                    print(duplicated);
+                    if (exists duplicated = isDuplicated(sha256)) {
+                        print(duplicated);
+                    } else {
+                        print("File `_hashList` not found.");
+                        System.exit(66); // EX_NOINPUT
+                    }
                 } else {
                     writeSha(filePath);
                 }
@@ -62,7 +69,28 @@ void writeSha(Path filePath) {
     suppressWarnings("unusedDeclaration")
     Process shatag = createProcess {
         command = "shatag";
-        arguments = ["-t"];
+        arguments = ["-qrt"];
     };
 }
 
+Boolean? isDuplicated(String sha256) {
+    try {
+        value hashList = readHashList();
+        value sha = JString(sha256);
+        if (Collections.binarySearch(hashList, sha) >= 0) {
+            return true;
+        } else {
+            return false;
+        }
+    } catch (IOException e) {
+        return null;
+    }
+}
+
+"Read file `_hashList` into RAM, which contains all SHA-256 hashes, sorted."
+throws (`class IOException`, "File not found.")
+JList<JString> readHashList() {
+    Path hashList = Paths.get("/pool/repos/incubator/shattr/_hashList");
+    value hashes = Files.readAllLines(hashList, Charset.defaultCharset());
+    return hashes;
+}
