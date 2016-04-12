@@ -1,4 +1,4 @@
-import ceylon.file { Directory, File, Path, Visitor, current, home }
+import ceylon.file { File, Path, Visitor, current, home }
 import ceylon.process { Process, createProcess }
 import ceylon.interop.java { javaClass }
 import java.lang { JString=String, System }
@@ -10,49 +10,19 @@ import java.nio.file.attribute { UserDefinedFileAttributeView }
 import java.util { Collections, JList=List }
 
 shared void run() {
-    if (exists xattrEnabled = isXattrEnabled()) {
-        if (xattrEnabled) {
+    if (isXattrEnabled()) {
             current.visit(visitor);
-        } else {
-            print("Error: xattr is not enabled.
-                   Try remount the file system, e.g.
-
-                       sudo mount -o remount,user_xattr MOUNT_POINT");
-        }
     } else {
-        print("Error: it seems that current working directory is invalid.
-               Please try again later.
-               If it still does not work, please report a bug.");
+        print("Error: xattr is not enabled.
+               Try remount the file system, e.g.
+
+                   sudo mount -o remount,user_xattr MOUNT_POINT");
         System.exit(75); // EX_TEMPFAIL
     }
 }
 
-Boolean? isXattrEnabled() {
-    if (is Directory workingDirectory = current.resource) {
-        return checkDirectoryXattr(workingDirectory);
-    } else {
-        // Something terrible happens on the system.
-        return null;
-    }
-}
-
-Boolean? checkDirectoryXattr(Directory directory) {
-    // This directory has files as direct children:
-    if (exists toCheckFile = directory.files().first) {
-        return checkFileXattr(toCheckFile.path);
-    } else {
-        // The current directory's direct children are all directories.
-        for (subdirectory in directory.childDirectories()) {
-            checkDirectoryXattr(subdirectory);
-        }
-        // FIXME What if we encountered an empty directory,
-        // or a directory full of symbolic links?
-        return null;
-    }
-}
-
-Boolean checkFileXattr(Path path) {
-    value filePath = Paths.get(path.string);
+Boolean isXattrEnabled() {
+    value filePath = Paths.get(current.string);
     FileStore store = Files.getFileStore(filePath);
     return store.supportsFileAttributeView("user");
 }
