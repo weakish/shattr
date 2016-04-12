@@ -1,4 +1,5 @@
 import ceylon.interop.java { javaClass }
+import java.lang { JString=String }
 import java.nio { ByteBuffer }
 import java.nio.file { Files, Path, Paths }
 import java.nio.file.attribute { UserDefinedFileAttributeView }
@@ -17,6 +18,8 @@ shared void run() {
         ByteBuffer readBuffer = ByteBuffer.allocate(view.size(tag));
         view.read(tag, readBuffer);
         readBuffer.flip();
+        value sha256 = JString(readBuffer.array());
+        print(sha256);
     } else {
         throw AssertionError("Need to specify file path.");
     }
