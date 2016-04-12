@@ -1,5 +1,6 @@
 import ceylon.interop.java { javaClass }
 import java.lang { System }
+import java.io { IOException }
 import java.nio { ByteBuffer }
 import java.nio.charset { Charset }
 import java.nio.file { FileStore, Files, NoSuchFileException, Path, Paths }
@@ -40,11 +41,16 @@ String? readSha(Path filePath) {
             filePath,
             javaClass<UserDefinedFileAttributeView>());
     String tag = "shatag.sha256";
-    ByteBuffer buffer = ByteBuffer.allocate(view.size(tag));
-    view.read(tag, buffer);
-    buffer.flip();
-    String? sha256 = Charset.defaultCharset().decode(buffer).string;
-    return sha256;
+    try {
+        Integer viewSize = view.size(tag);
+        ByteBuffer buffer = ByteBuffer.allocate(viewSize);
+        view.read(tag, buffer);
+        buffer.flip();
+        String? sha256 = Charset.defaultCharset().decode(buffer).string;
+        return sha256;
+    } catch (IOException e) {
+        return null;
+    }
 }
 
 
