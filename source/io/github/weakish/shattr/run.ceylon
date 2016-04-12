@@ -13,7 +13,11 @@ shared void run() {
         Path filePath = Paths.get(first_arg);
         try {
             if (isXattrEnabled(filePath)) {
-                print(readSha(filePath));
+                if (exists sha256 = readSha(filePath)) {
+                    print(duplicated);
+                } else {
+                    writeSha(filePath);
+                }
             } else {
                 print("Error: xattr is not enabled.
                        Try remount the file system, e.g.
@@ -53,4 +57,12 @@ String? readSha(Path filePath) {
     }
 }
 
+"Call `shatag` to write sha256 xattrs. Nonblocking."
+void writeSha(Path filePath) {
+    suppressWarnings("unusedDeclaration")
+    Process shatag = createProcess {
+        command = "shatag";
+        arguments = ["-t"];
+    };
+}
 
