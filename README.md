@@ -51,6 +51,10 @@ Note if `shattr` encounter a file without `user.shatag.sha256` file,
 it will call `shatag` to write the xattr, nonblockingly.
 Thus if `shatag` succeed, `shattr` will check the file on the next run.
 
+License
+--------
+
+0BSD.
 
 Todo
 ----------
