@@ -27,15 +27,26 @@ Boolean isXattrEnabled() {
     return store.supportsFileAttributeView("user");
 }
 
-
 object visitor extends Visitor() {
-    file(File f) => reportDuplicated(f.path);
+    value hashList = readHashList();
+    file(File f) => reportDuplicated(f.path, hashList);
+}
+
+"Read file <hashList> into RAM,
+ which contains all SHA-256 hashes, sorted."
+throws (`class IOException`, "File not found.")
+JList<JString> readHashList() {
+    String defaultPath = "``home``/.shatagdb-hash-list.txt";
+    String hashListPath = process.arguments.first else defaultPath;
+    value hashList = Paths.get(hashListPath);
+    value hashes = Files.readAllLines(hashList, Charset.defaultCharset());
+    return hashes;
 }
 
 "Report duplicated files. Silent on non duplicated."
-void reportDuplicated(Path path) {
+void reportDuplicated(Path path, JList<JString> hashList) {
     if (exists sha256 = readSha(path)) {
-        if (exists duplicated = isDuplicated(sha256)) {
+        if (exists duplicated = isDuplicated(sha256, hashList)) {
             if (duplicated) {
                 print("``path``");
             } else {
@@ -80,9 +91,8 @@ void writeSha(Path filePath) {
     };
 }
 
-Boolean? isDuplicated(String sha256) {
+Boolean? isDuplicated(String sha256, JList<JString> hashList) {
     try {
-        value hashList = readHashList();
         value sha = JString(sha256);
         if (Collections.binarySearch(hashList, sha) >= 0) {
             return true;
@@ -94,13 +104,3 @@ Boolean? isDuplicated(String sha256) {
     }
 }
 
-"Read file <hashList> into RAM,
- which contains all SHA-256 hashes, sorted."
-throws (`class IOException`, "File not found.")
-JList<JString> readHashList() {
-    String defaultPath = "``home``/.shatagdb-hash-list.txt";
-    String hashListPath = process.arguments.first else defaultPath;
-    value hashList = Paths.get(hashListPath);
-    value hashes = Files.readAllLines(hashList, Charset.defaultCharset());
-    return hashes;
-}
