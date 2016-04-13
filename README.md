@@ -31,7 +31,14 @@ Usage
 
     shattr PATH_TO_HASHLIST
 
-will print all duplicated files under the current directory.
+will print status of files under the current directory.
+
+```
+N empty file
+D duplicated file
+U unique file
+? unknown file (without `sha256` xattr, no read permission, etc)
+```
 
 If `PATH_TO_HASHLIST` is not specified,
 `shattr` will use `~/.shatagdb-hash-list.txt`.

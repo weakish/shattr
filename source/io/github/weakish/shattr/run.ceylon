@@ -86,13 +86,16 @@ void reportDuplicated(
     // [#4410]: https://github.com/ceylon/ceylon/issues/4410
     else {
         if (exists sha256 = readSha(path)) {
-            if (isDuplicated(sha256, hashList)) {
-                print("``path``");
+            String sha256Empty = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
+            if (sha256 == sha256Empty) {
+                print("N ``path``");
+            } else if (isDuplicated(sha256, hashList)) {
+                print("D ``path``");
             } else {
-                // silent
+                print("U ``path``");
             }
         } else {
-            // silent
+            print("? ``path``");
         }
     }
 }

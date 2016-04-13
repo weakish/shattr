@@ -1,4 +1,4 @@
-native("jvm") module io.github.weakish.shattr "0.0.0" {
+native("jvm") module io.github.weakish.shattr "0.1.0" {
     import ceylon.file "1.2.0";
 
     import java.base "7";
