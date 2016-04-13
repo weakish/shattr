@@ -1,5 +1,4 @@
 import ceylon.file { File, Path, Visitor, current, home }
-import ceylon.process { Process, createProcess }
 import ceylon.interop.java { javaClass }
 import java.lang { JString=String, System }
 import java.io { IOException }
@@ -43,7 +42,9 @@ JList<JString> readHashList() {
     return hashes;
 }
 
-"Report duplicated files. Silent on non duplicated."
+"Report duplicated files.
+ Silent on non duplicated files
+ and files without `user.shatag.sha256`."
 void reportDuplicated(Path path, JList<JString> hashList) {
     if (exists sha256 = readSha(path)) {
         if (exists duplicated = isDuplicated(sha256, hashList)) {
@@ -57,7 +58,7 @@ void reportDuplicated(Path path, JList<JString> hashList) {
             System.exit(66); // EX_NOINPUT
         }
     } else {
-        writeSha(path);
+        // silent
     }
 }
 
@@ -80,15 +81,6 @@ String? readSha(Path path) {
     } catch (IOException e) {
         return null;
     }
-}
-
-"Call `shatag` to write sha256 xattrs. Nonblocking."
-void writeSha(Path filePath) {
-    suppressWarnings("unusedDeclaration")
-    Process shatag = createProcess {
-        command = "shatag";
-        arguments = ["-t"];
-    };
 }
 
 Boolean? isDuplicated(String sha256, JList<JString> hashList) {
