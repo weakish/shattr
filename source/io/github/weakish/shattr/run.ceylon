@@ -4,7 +4,9 @@ import java.lang { JString=String, System }
 import java.io { IOException }
 import java.nio { ByteBuffer }
 import java.nio.charset { Charset }
-import java.nio.file { FileStore, Files, Paths }
+import java.nio.file {
+    FileStore, Files, InvalidPathException, JPath=Path, Paths
+}
 import java.nio.file.attribute { UserDefinedFileAttributeView }
 import java.util { Collections, JList=List }
 
@@ -27,72 +29,118 @@ Boolean isXattrEnabled() {
 }
 
 object visitor extends Visitor() {
-    value hashList = readHashList();
+    JList<JString>|InvalidPathException|IOException hashList;
+    hashList = readHashList();
     file(File f) => reportDuplicated(f.path, hashList);
 }
 
 "Read file <hashList> into RAM,
  which contains all SHA-256 hashes, sorted."
-throws (`class IOException`, "File not found.")
-JList<JString> readHashList() {
+JList<JString>|InvalidPathException|IOException readHashList() {
     String defaultPath = "``home``/.shatagdb-hash-list.txt";
     String hashListPath = process.arguments.first else defaultPath;
-    value hashList = Paths.get(hashListPath);
-    value hashes = Files.readAllLines(hashList, Charset.defaultCharset());
+
+    JPath hashList;
+    try {
+        hashList = Paths.get(hashListPath);
+    } catch (InvalidPathException e) {
+        return e;
+    }
+
+    // We have to use `JList<JString>`,
+    // because the specific return type of `Files.readAllLines`
+    // is platform dependent.
+    JList<JString> hashes;
+    try {
+        hashes = Files.readAllLines(hashList, Charset.defaultCharset());
+    } catch (IOException e) {
+        return e;
+    }
+
     return hashes;
 }
 
 "Report duplicated files.
  Silent on non duplicated files
  and files without `user.shatag.sha256`."
-void reportDuplicated(Path path, JList<JString> hashList) {
-    if (exists sha256 = readSha(path)) {
-        if (exists duplicated = isDuplicated(sha256, hashList)) {
-            if (duplicated) {
+void reportDuplicated(
+    Path path,
+    JList<JString>|InvalidPathException|IOException hashList) {
+    switch (hashList)
+    case (is InvalidPathException)  {
+            print("Path name of hash list is invalid.");
+            System.exit(64); // EX_USAGE
+    }
+    case (is IOException) {
+            print("Cannot read hash list file.");
+            System.exit(66); // EX_NOINPUT
+    }
+    // We use `else` instead of `case (is JList<JString>)`
+    // because the Ceylon compiler does not know
+    // type of `JList` arguments.
+    // JVM erased generic types, thus crippling Ceylon's type system.
+    // BTW, `else` is faster because Ceylon compiler
+    // does not optimize the unnecessary analysis of the reified type.
+    // ([#4410][])
+    //
+    // [#4410]: https://github.com/ceylon/ceylon/issues/4410
+    else {
+        if (exists sha256 = readSha(path)) {
+            if (isDuplicated(sha256, hashList)) {
                 print("``path``");
             } else {
                 // silent
             }
         } else {
-            print("Cannot read hash list file.");
-            System.exit(66); // EX_NOINPUT
+            // silent
         }
-    } else {
-        // silent
     }
 }
 
 
 "Given a valid file path, read its `user.shatag.sha256` xattr."
 String? readSha(Path path) {
+    UserDefinedFileAttributeView view = getXattrView(path);
+    String tag = "shatag.sha256";
+    if (exists size = getXattrSize(view, tag)) {
+        return getXattr(tag, size, view);
+    } else {
+        return null;
+    }
+}
+
+UserDefinedFileAttributeView getXattrView(Path path) {
     value filePath = Paths.get(path.string);
     UserDefinedFileAttributeView view =
         Files.getFileAttributeView(
             filePath,
             javaClass<UserDefinedFileAttributeView>());
-    String tag = "shatag.sha256";
+    return view;
+}
+
+Integer? getXattrSize(UserDefinedFileAttributeView view, String tag) {
     try {
-        Integer viewSize = view.size(tag);
-        ByteBuffer buffer = ByteBuffer.allocate(viewSize);
-        view.read(tag, buffer);
-        buffer.flip();
-        String? sha256 = Charset.defaultCharset().decode(buffer).string;
-        return sha256;
+        return view.size(tag);
     } catch (IOException e) {
         return null;
     }
 }
 
-Boolean? isDuplicated(String sha256, JList<JString> hashList) {
-    try {
-        value sha = JString(sha256);
-        if (Collections.binarySearch(hashList, sha) >= 0) {
-            return true;
-        } else {
-            return false;
-        }
-    } catch (IOException e) {
-        return null;
+String? getXattr(String tag, Integer size, UserDefinedFileAttributeView view) {
+    ByteBuffer buffer = ByteBuffer.allocate(size);
+    view.read(tag, buffer);
+    buffer.flip();
+    String? sha256 = Charset.defaultCharset().decode(buffer).string;
+    return sha256;
+}
+
+
+Boolean isDuplicated(String sha256, JList<JString> hashList) {
+    value sha = JString(sha256);
+    if (Collections.binarySearch(hashList, sha) >= 0) {
+        return true;
+    } else {
+        return false;
     }
 }
 
