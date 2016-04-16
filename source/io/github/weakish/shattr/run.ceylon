@@ -20,7 +20,7 @@ shared void run() {
                Try remount the file system, e.g.
 
                    sudo mount -o remount,user_xattr MOUNT_POINT");
-        System.exit(75); // EX_TEMPFAIL
+        System.exit(75);  // EX_TEMPFAIL
     }
 }
 
@@ -71,11 +71,11 @@ void reportDuplicated(
     switch (hashList)
     case (is InvalidPathException)  {
             print("Path name of hash list is invalid.");
-            System.exit(64); // EX_USAGE
+            System.exit(64);  // EX_USAGE
     }
     case (is IOException) {
             print("Cannot read hash list file.");
-            System.exit(66); // EX_NOINPUT
+            System.exit(66);  // EX_NOINPUT
     }
     // We use `else` instead of `case (is JList<JString>)`
     // because the Ceylon compiler does not know
