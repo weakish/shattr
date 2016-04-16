@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <meta name="description" content="shattr : A `shatag` clone in Ceylon.">
+
+    <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
+
+    <title>shattr</title>
+  </head>
+
+  <body>
+
+    <!-- HEADER -->
+    <div id="header_wrap" class="outer">
+        <header class="inner">
+          <a id="forkme_banner" href="https://github.com/weakish/shattr">View on GitHub</a>
+
+          <h1 id="project_title">shattr</h1>
+          <h2 id="project_tagline">A `shatag` clone in Ceylon.</h2>
+
+            <section id="downloads">
+              <a class="zip_download_link" href="https://github.com/weakish/shattr/zipball/master">Download this project as a .zip file</a>
+              <a class="tar_download_link" href="https://github.com/weakish/shattr/tarball/master">Download this project as a tar.gz file</a>
+            </section>
+        </header>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
+        <h1>
+<a id="shattr" class="anchor" href="#shattr" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>shattr</h1>
+
+<p>A <a href="https://bitbucket.org/maugier/shatag">shatag</a> clone in Ceylon.</p>
+
+<h2>
+<a id="status" class="anchor" href="#status" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Status</h2>
+
+<p>WIP.</p>
+
+<h2>
+<a id="why" class="anchor" href="#why" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Why</h2>
+
+<p><code>shatag -rl</code> is slow since it needs to query SQL database for every file.
+Instead <code>shattr</code> reads all SHA-256 checksums in memory.</p>
+
+<h2>
+<a id="installation" class="anchor" href="#installation" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Installation</h2>
+
+<p>With <code>ceylon</code> and <code>shatag</code> installed:</p>
+
+<ol>
+<li>Clone this repository to a directory, e.g. <code>opt</code>.</li>
+<li>Edit <code>shattr_repo</code> to the cloned repository in <code>shattr</code>, e.g. <code>/opt/shattr</code>.</li>
+<li>Put <code>shattr</code> into PATH.</li>
+</ol>
+
+<h2>
+<a id="usage" class="anchor" href="#usage" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Usage</h2>
+
+<pre><code>shattr PATH_TO_HASHLIST
+</code></pre>
+
+<p>will print status of files under the current directory.</p>
+
+<pre><code>N empty file
+D duplicated file
+U unique file
+? unknown file (without `sha256` xattr, no read permission, etc)
+</code></pre>
+
+<p>If <code>PATH_TO_HASHLIST</code> is not specified,
+<code>shattr</code> will use <code>~/.shatagdb-hash-list.txt</code>.</p>
+
+<p><code>PATH_TO_HASHLIST</code> is a text file,
+containing all SHA256 hashes of known files, one per line, <strong>sorted</strong>.</p>
+
+<p><code>PATH_TO_HASHLIST</code> had to be produced manually yet.
+For example, if using <code>shatag</code> with an sqlite3 backend,
+<code>PATH_TO_HASHLIST</code> can be produced via:</p>
+
+<div class="highlight highlight-source-shell"><pre>sqlite3 -noheader -csv <span class="pl-k">~</span>/.shatagdb <span class="pl-s"><span class="pl-pds">"</span>select hash from contents;<span class="pl-pds">"</span></span> <span class="pl-k">&gt;</span> hashlist.csv</pre></div>
+
+<p>Note if <code>shattr</code> encounter a file without <code>user.shatag.sha256</code> file,
+it will call <code>shatag</code> to write the xattr, nonblockingly.
+Thus if <code>shatag</code> succeed, <code>shattr</code> will check the file on the next run.</p>
+
+<h2>
+<a id="license" class="anchor" href="#license" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>License</h2>
+
+<p>0BSD.</p>
+
+<h2>
+<a id="todo" class="anchor" href="#todo" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Todo</h2>
+
+<p>To manage file operation history, we can use <code>git</code> as a backend,
+instead of SQL databases used by <code>shatag</code>.</p>
+
+<h3>
+<a id="choice-1" class="anchor" href="#choice-1" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Choice 1</h3>
+
+<p>Use filename as key:</p>
+
+<div class="highlight highlight-source-ceylon"><pre><span class="pl-en">String</span> <span class="pl-smi">repo</span> = <span class="pl-s">"~/.local/var/shattr/repo"</span>;
+<span class="pl-en">String</span> <span class="pl-smi">host</span> = <span class="pl-s">"hostname"</span>;
+<span class="pl-en">String</span> <span class="pl-smi">fileName</span> = <span class="pl-s">"``repo``/hostname/path/to/original/file"</span>;</pre></div>
+
+<p>Content is compatible with git-lfs:</p>
+
+<pre><code>version https://git-lfs.github.com/spec/v1
+oid sha256:f4ddae8469a15fb96fea5bfb3340526fe415a6cfc5bc6deebf5ae418b407364d
+size 21
+</code></pre>
+
+<p>Pros:</p>
+
+<p>Just use ordinal file operations like <code>mv</code> and <code>rm</code>, etc.</p>
+
+<p>Cons:</p>
+
+<ol>
+<li><p>We need to build separated index of sha256, pointing to <code>Array&lt;Path&gt;</code>.</p></li>
+<li>
+<p>A huge number of files will exhaust inodes of file system and slow down git.</p>
+
+<blockquote>
+<p>Scaling to hundreds of thousands of files is not a problem,
+scaling beyond that and git will start to get slow.</p>
+</blockquote>
+
+<p>-- <a href="https://git-annex.branchable.com/scalability/">git-annex wiki</a></p>
+
+<p>I have 1904875 files(and growing).</p>
+</li>
+</ol>
+
+<h3>
+<a id="choice-2" class="anchor" href="#choice-2" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Choice 2</h3>
+
+<p>Use <code>sha256</code> as key:</p>
+
+<div class="highlight highlight-source-ceylon"><pre><span class="pl-en">String</span> <span class="pl-smi">repo</span> = <span class="pl-s">"~/.local/var/shattr/repo"</span>;
+<span class="pl-en">String</span> <span class="pl-smi">fileName</span> = <span class="pl-s">"``repo``/sha256"</span></pre></div>
+
+<p>Content</p>
+
+<pre><code>version https://git-lfs.github.com/spec/v1
+oid sha256:f4ddae8469a15fb96fea5bfb3340526fe415a6cfc5bc6deebf5ae418b407364d
+size 21
+paths hostname:/path/to/file;another:/path/to/file
+</code></pre>
+
+<p>We still have <code>oid</code> field to conform git-lfs specification.</p>
+
+<p>Cons:</p>
+
+<ol>
+<li><p>Ordinal file operations like <code>mv</code> and <code>rm</code> does not work
+(unless we implement a FUSE file system).</p></li>
+<li><p>Still a huge number of files.
+I have 1338211 (and growing).</p></li>
+</ol>
+
+<h3>
+<a id="option-3" class="anchor" href="#option-3" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Option 3</h3>
+
+<p>Option 1 + separated repositories for videos, audios, books etc.</p>
+
+<p>Pros:</p>
+
+<ol>
+<li>Same as Option 1.</li>
+</ol>
+
+<p>Cons:</p>
+
+<ol>
+<li>Same as Option 1, except file numbers.</li>
+<li>Inter-repository operation is difficult to handle.</li>
+</ol>
+
+<h3>
+<a id="option-4" class="anchor" href="#option-4" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Option 4</h3>
+
+<p>Option 2 + separated repositories.</p>
+
+<p>Cons:</p>
+
+<p>Refer to Option 2 and Option 3.</p>
+
+<h3>
+<a id="option-5" class="anchor" href="#option-5" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Option 5</h3>
+
+<p>Use one big text file (e.g. csv) to record all meta data, sorted by <code>sha256</code>.</p>
+
+<p>Cons:</p>
+
+<p>Same as Option 2 except file number issue becomes file size issue.</p>
+
+<h3>
+<a id="option-6" class="anchor" href="#option-6" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Option 6</h3>
+
+<p>Option 5 + separated text files.</p>
+
+<p>Cons:</p>
+
+<p>Refer to Option 2 and Option 3.</p>
+
+<h3>
+<a id="option-7" class="anchor" href="#option-7" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Option 7</h3>
+
+<p>Without git, use Java  object persistence, like <a href="http://prevayler.org/">Prevayler</a>.</p>
+      </section>
+    </div>
+
+    <!-- FOOTER  -->
+    <div id="footer_wrap" class="outer">
+      <footer class="inner">
+        <p class="copyright">shattr maintained by <a href="https://github.com/weakish">weakish</a></p>
+        <p>Published with <a href="https://pages.github.com">GitHub Pages</a></p>
+      </footer>
+    </div>
+
+    
+
+  </body>
+</html>
