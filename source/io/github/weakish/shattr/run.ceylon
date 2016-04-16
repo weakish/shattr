@@ -1,4 +1,5 @@
 import ceylon.file { File, Path, Visitor, current, home }
+
 import ceylon.interop.java { javaClass }
 import java.lang { JString=String, System }
 import java.io { IOException }
@@ -9,6 +10,7 @@ import java.nio.file {
 }
 import java.nio.file.attribute { UserDefinedFileAttributeView }
 import java.util { Collections, JList=List }
+
 
 shared void run() {
     if (isXattrEnabled()) {
