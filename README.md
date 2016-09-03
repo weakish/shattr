@@ -6,30 +6,43 @@ A [shatag][] clone in Ceylon.
 [shatag]: https://bitbucket.org/maugier/shatag
 
 Status
--------
+------
 
-WIP.
+A lot of features unimplemented.
+Usable for implemented feature.
 
 Why
 ----
 
 `shatag -rl` is slow since it needs to query SQL database for every file.
-Instead `shattr` reads all SHA-256 checksums in memory.
+`shattr` reads all SHA-256 checksums in memory instead.
 
 Installation
 --------------
 
-With `ceylon` and `shatag` installed:
+### With `Ceylon`
 
-1. Clone this repository to a directory, e.g. `opt`.
-2. Edit `shattr_repo` to the cloned repository in `shattr`, e.g. `/opt/shattr`.
-3. Put `shattr` into PATH.
+If you have `Ceylon` installed, you can download the `.car` archive (`< 4K`) at
+[Releases] and put it into [Ceylon module repository][repo].
 
+### With `java` directly
+
+If you have Java Runtime (7+) installed , but not Ceylon, you can download the fat jar file (`3.2M`).
+
+### Compile manually
+
+Clone this repository and run `ceylon compile`.
+
+Tested with `Ceylon 1.2+`.
+May work with older versions.
+
+[Releases]: https://github.com/weakish/shattr/releases
+[repo]: http://ceylon-lang.org/documentation/1.2/reference/repository/
 
 Usage
 ------
 
-    shattr PATH_TO_HASHLIST
+    $SHATTR_COMMAND PATH_TO_HASHLIST
 
 will print status of files under the current directory.
 
@@ -40,13 +53,17 @@ U unique file
 ? unknown file (without `sha256` xattr, no read permission, etc)
 ```
 
+`$SHATTR_COMMAND` is one of:
+
+- `ceylon run io.github.weakish.shattr` if using `Ceylon`;
+- `java -jar /path/to/io.github.weakish.shattr-0.2.0.jar` if using `java` directly.
+
 If `PATH_TO_HASHLIST` is not specified,
 `shattr` will use `~/.shatagdb-hash-list.txt`.
 
 `PATH_TO_HASHLIST` is a text file,
-containing all SHA256 hashes of known files, one per line, **sorted**.
+containing all SHA256 hashes of known files, one per line.
 
-`PATH_TO_HASHLIST` had to be produced manually yet.
 For example, if using `shatag` with an sqlite3 backend,
 `PATH_TO_HASHLIST` can be produced via:
 
@@ -54,9 +71,51 @@ For example, if using `shatag` with an sqlite3 backend,
 sqlite3 -noheader -csv ~/.shatagdb "select hash from contents;" > hashlist.csv
 ```
 
-Note if `shattr` encounter a file without `user.shatag.sha256` file,
-it will call `shatag` to write the xattr, nonblockingly.
-Thus if `shatag` succeed, `shattr` will check the file on the next run.
+Contribute
+----------
+
+Send pull requests at <https://github.com/weakish/shattr>.
+
+### Coding style
+
+#### Prefer `if . then . else .` to `. then . else .`
+
+We feel `A then B else C` is confusing.
+
+Readers may think `A then B else C` is `A ? B : C` in other languages, but they are **not the same**:
+
+1. `A then B else C` is actually `(A then B) else C`:
+
+	 * `A then B` evaluates to `B` if `A` is not `null`, otherwise evaluates to `null`.
+	 * `X else Y` evaluates to `X` if `X` is not `null`, otherwise evaluates to `Y`.
+
+2. Thus the type of `B` is `T given T satisfies Object`, i.e. requires to not be `null`.
+
+I think `if (A) then B else C` is much cleaner.
+
+#### Avoid `i++`, `++i`
+
+Compared to `i+=1`, `i++` only saves one character.
+
+`y=i++` and `y=++i` is really confusing to me.
+
+Same applies to `i--` and `--i`.
+
+#### Prefer functions to classes
+
+Currently there is no class declaration in code source.
+
+We prefer to declare classes for new types (or type aliases).
+
+#### Other
+
+If you disagree the above, file an issue.
+
+Send pull requests to add new coding style.
+
+Please do not add formatting style such as `use two spaces` and `closing braces on their own line`.
+Formatting style is unlikely to affect readability of code,
+and can be auto adjusted via `ceylon format`.
 
 License
 --------
@@ -93,7 +152,7 @@ Just use ordinal file operations like `mv` and `rm`, etc.
 
 Cons:
 
-1. We need to build separated index of sha256, pointing to `Array<Path>`.
+1. We need to build separated index of sha256.
 
 2. A huge number of files will exhaust inodes of file system and slow down git.
 
@@ -102,7 +161,7 @@ Cons:
 
     -- [git-annex wiki](https://git-annex.branchable.com/scalability/)
 
-    I have 1904875 files(and growing).
+    I have 1904875 files (and growing).
 
 ### Choice 2
 
@@ -159,7 +218,7 @@ Use one big text file (e.g. csv) to record all meta data, sorted by `sha256`.
 
 Cons:
 
-Same as Option 2 except file number issue becomes file size issue.
+`mv` etc won't work.
 
 ### Option 6
 
