@@ -1,0 +1,7 @@
+modules
+.ceylon
+.classpath
+.project
+.exploded
+*.jar
+
