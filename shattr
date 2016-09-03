@@ -1,7 +1,0 @@
-#!/bin/sh
-
-### Configuration
-
-shattr_repo=/opt/shattr
-
-ceylon run -L --rep=$shattr/modules io.github.weakish.shattr
