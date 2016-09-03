@@ -1,6 +1,7 @@
 modules
-shattr.sublime-project
-shattr.sublime-workspace
+.ceylon
+.classpath
+.project
+.exploded
+*.jar
 
-/bin/
-/.exploded/
