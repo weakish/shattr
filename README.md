@@ -120,11 +120,13 @@ Readers may think `A then B else C` is `A ? B : C` in other languages, but they 
 
 I think `if (A) then B else C` is much cleaner.
 
-#### Avoid `i++`, `++i`
-
-Compared to `i+=1`, `i++` only saves one character.
+#### Only use `i++` to increase `i`.
 
 `y=i++` and `y=++i` is really confusing to me.
+
+So I prefer to only uses `i++` to increase `i`, e.g. in a while loop.
+I think a meaningful evaluated value of `i++` should be `void`
+if the a programming language allows `++`.
 
 Same applies to `i--` and `--i`.
 
