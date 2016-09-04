@@ -46,12 +46,12 @@ Usage
 
 will print status of files under the current directory.
 
-```
-N empty file
-D duplicated file
-U unique file
-? unknown file (without `sha256` xattr, no read permission, etc)
-```
+
+    N empty file
+    D duplicated file
+    U unique file
+    ? unknown file (without `sha256` xattr, no read permission, etc)
+
 
 `$SHATTR_COMMAND` is one of:
 
@@ -60,6 +60,8 @@ U unique file
 
 If `PATH_TO_HASHLIST` is not specified,
 `shattr` will use `~/.shatagdb-hash-list.txt`.
+
+### Hash list format
 
 `PATH_TO_HASHLIST` is a text file,
 containing all SHA256 hashes of known files, one per line.
@@ -71,8 +73,33 @@ For example, if using `shatag` with an sqlite3 backend,
 sqlite3 -noheader -csv ~/.shatagdb "select hash from contents;" > hashlist.csv
 ```
 
-Contribute
-----------
+### Customize output
+
+By default we use a git status style output.
+You can change output format style with `--format FORMAT`.
+`FORMAT` is one of `git`, `inotifywait`, and `cvs`.
+`--format FORMAT` should be specified *before* hash list file.
+
+#### `--format inotifywait`
+
+    EMPTY empty file
+    DUMPLICATED duplicatd file
+    UNIQUE unique file
+    UNKNOWN file (without `sha256` xattr, no read permission, etc)
+
+#### `--format cvs`
+
+Like `--format inotifywait`, but separated with comma `,`, with path name quoted.
+
+    EMPTY,"empty_file.txt"
+    UNIQUE,"A file containing spaces and ""double quotes"""
+
+#### `--format yourown`
+
+You need to write a formatting function typed `String(Status, Path)`.
+Then register it in command line option parsing code in `run()`.
+
+### Contribute
 
 Send pull requests at <https://github.com/weakish/shattr>.
 
@@ -102,8 +129,6 @@ Compared to `i+=1`, `i++` only saves one character.
 Same applies to `i--` and `--i`.
 
 #### Prefer functions to classes
-
-Currently there is no class declaration in code source.
 
 We prefer to declare classes for new types (or type aliases).
 
