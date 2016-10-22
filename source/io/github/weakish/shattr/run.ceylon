@@ -131,7 +131,39 @@ void printer(Status status, Path path,
 Boolean isXattrEnabled() {
     value filePath = Paths.get(current.string);
     FileStore store = Files.getFileStore(filePath);
-    return store.supportsFileAttributeView("user");
+    if (store.supportsFileAttributeView("user")) {
+        return true;
+    } else {
+        // `supportsFileAttributeView` cannot guarantee to give the correct result
+        // when the file store is not a local storage device.
+        Path mtabPath = parsePath("/etc/mtab");
+        if (is File file = mtabPath.resource) {
+            try (reader = file.Reader()) {
+                while (exists line = reader.readLine()) {
+                    if (line.contains(store.name())) {
+                        if (line.contains("nouser_xattr")) {
+                            return false;
+                        } else {
+                            // enabled by default on ext3/ext4 for not very old Linux kernels
+                            if (line.contains("ext3") || line.contains("ext4")) {
+                                return true;
+                            } else {
+                                if (line.contains("user_xattr")) {
+                                    return true;
+                                } else {
+                                    return false;
+                                }
+                            }
+                        }
+                    }
+                }
+                return false;
+            }
+        } else {
+            // No `mtab`, probably not on Linux. Unsure. Assume `yes`.
+            return true;
+        }
+    }
 }
 object visitor extends Visitor() {
     TreeSet<String> hashList = readHashList();
