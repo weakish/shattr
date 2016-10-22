@@ -47,29 +47,24 @@ import java.nio.file.attribute {
 }
 
 String? sha256FileHex(Path filePath) {
-    log.info(filePath.string);
     value digester = sha256();
     Byte[] sha256sum;
     if (is File file = filePath.resource) {
-        print("``filePath`` is valid");
         try (reader = file.Reader()) {
-            // Sector size on my machie: 512 bytes
+            // Sector size of file system on my machine: 512 bytes
             // L1 cache size of my CPU: 64 K
             Integer bufferSize = 64 * 1024;
             Integer remainingSize = file.size % bufferSize;
             variable Integer parts = file.size / bufferSize;
             variable Byte[] bytes;
             while (parts > 0) {
-                print("update every part");
                 bytes = reader.readBytes(bufferSize);
                 digester.update(bytes);
                 parts--;
             }
             Byte[] remainder = reader.readBytes(remainingSize);
-            print("reading finished");
             sha256sum = digester.digest(remainder);
         }
-        print(sha256sum);
         return base16String.encode(sha256sum);
     } else {
         return null;
