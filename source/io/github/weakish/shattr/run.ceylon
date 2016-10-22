@@ -165,10 +165,29 @@ Boolean isXattrEnabled() {
         }
     }
 }
-object visitor extends Visitor() {
+
+object lookupVisitor extends Visitor() {
     TreeSet<String> hashList = readHashList();
     file(File f) => reportDuplicated(f.path, hashList);
 }
+void reportInconsistencies(Path path) {
+    if (exists shaXattr = readSha(path)) {
+        if (exists sha256 = sha256FileHex(path)) {
+            if (shaXattr != sha256) {
+                print("``path``,``sha256``,``shaXattr``");
+            }
+        } else {
+            log.error(() => "Failed to calculate sha256sum for ``path``");
+        }
+    } else {
+        log.warn(() => "Failed to read sha256 xattr for ``path``");
+    }
+}
+
+object scrubVisitor extends Visitor() {
+    file(File f) => reportInconsistencies(f.path);
+}
+
 "Read file <hashList> into RAM,
  which contains all SHA-256 hashes, sorted."
 TreeSet<String> readHashList() {
@@ -249,40 +268,63 @@ Boolean isDuplicated(String sha256, TreeSet<String> hashList) {
     return if (hashList.contains(sha256)) then true else false;
 }
 
+"An empty visitor does nothing."
+object noVisitor extends Visitor() {}
+
 shared void run() {
     addLogWriter(writeMuchSimplerLog);
     String commandLineUsage
-            = "java -jar /path/to/shattr.jar [--format FORMAT] [hash_list_file]";
+            = "java -jar shattr.jar --lookup [--format FORMAT] [hash_list_file]
+                                    --scrub
     String formatDescription
             = "FORMAT is one of `git`, `inotifywait`, and `cvs`.";
+    Visitor visitor;
     switch (option = process.arguments.first)
     case ("-h" | "--help") {
+        visitor = noVisitor;
         print("Usage:
                    ``commandLineUsage``
                    ``formatDescription``");
     }
-    case ("--format") {
-        switch (format = process.arguments[1])
-        case ("git") {
-            formatter = git;
-        }
-        case ("inotifywait") {
-            formatter = inotifywait;
-        }
-        case ("cvs") {
-            formatter = cvs;
+    case ("-l" | "--lookup") {
+        switch (lookupOption = process.arguments[1])
+        case ("--format") {
+            switch (format = process.arguments[2])
+            case ("git") {
+                formatter = git;
+            }
+            case ("inotifywait") {
+                formatter = inotifywait;
+            }
+            case ("cvs") {
+                formatter = cvs;
+            }
+            else {
+                log.fatal(formatDescription);
+                process.exit(64);
+            }
+            hashListPath = process.arguments[3] else hashListPath;
         }
         else {
             log.fatal(formatDescription);
             System.exit(64);
         }
-        hashListPath = process.arguments.last else hashListPath;
+        visitor = lookupVisitor;
+    }
+    case ("-s" | "--scrub") {
+        visitor = scrubVisitor;
+    }
     }
     else {
-        hashListPath = process.arguments.first else hashListPath;
+        visitor = noVisitor;
+        print("Usage:
+               ``commandLineUsage``
+               ``formatDescription``");
+        process.exit(64); // EX_USAGE
     }
     if (isXattrEnabled()) {
-        try { current.visit(visitor);
+        try {
+            current.visit(visitor);
         } catch (InvalidPathException e) {
             log.fatal(e.message);
             process.exit(64); // EX_USAGE
