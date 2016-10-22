@@ -24,16 +24,11 @@ import ceylon.logging {
     Priority,
     info
 }
-
 import de.dlkw.ccrypto.svc {
     sha256
 }
-
 import java.io {
     IOException
-}
-import java.lang {
-    System
 }
 import java.nio {
     ByteBuffer
@@ -263,16 +258,16 @@ shared void run() {
         try { current.visit(visitor);
         } catch (InvalidPathException e) {
             log.fatal(e.message);
-            System.exit(64);
+            process.exit(64); // EX_USAGE
         } catch (IOException e) {
             log.fatal(e.message);
-            System.exit(66);
+            process.exit(66); // EX_NOINPUT
         }
     } else {
         log.fatal("Error: xattr is not enabled.
                    Try remount the file system, e.g.
 
                    sudo mount -o remount,user_xattr MOUNT_POINT");
-        System.exit(75);
+        process.exit(75);
     }
 }
