@@ -271,6 +271,8 @@ Boolean isDuplicated(String sha256, TreeSet<String> hashList) {
 "An empty visitor does nothing."
 object noVisitor extends Visitor() {}
 
+"Entry point."
+suppressWarnings("expressionTypeNothing")
 shared void run() {
     addLogWriter(writeMuchSimplerLog);
     String commandLineUsage
