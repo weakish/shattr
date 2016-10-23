@@ -8,8 +8,11 @@ A [shatag][] clone in Ceylon.
 Status
 ------
 
-A lot of features unimplemented.
-Usable for implemented feature.
+Basic features implemented:
+
+- `--lookup`: Lookup for duplicates.
+- `--scrub`: Recompute checksums to detect silent corruption.
+- `--tag`: Compute new checksums for files that don't have one, or when it is outdated.
 
 Why
 ----
@@ -45,7 +48,9 @@ May work with older versions.
 Usage
 ------
 
-    $SHATTR_COMMAND PATH_TO_HASHLIST
+### Lookup
+
+    $SHATTR_COMMAND -l PATH_TO_HASHLIST
 
 will print status of files under the current directory.
 
@@ -64,7 +69,7 @@ will print status of files under the current directory.
 If `PATH_TO_HASHLIST` is not specified,
 `shattr` will use `~/.shatagdb-hash-list.txt`.
 
-### Hash list format
+#### Hash list format
 
 `PATH_TO_HASHLIST` is a text file,
 containing all SHA256 hashes of known files, one per line.
@@ -76,31 +81,40 @@ For example, if using `shatag` with an sqlite3 backend,
 sqlite3 -noheader -csv ~/.shatagdb "select hash from contents;" > hashlist.csv
 ```
 
-### Customize output
+#### Customize output
 
 By default we use a git status style output.
 You can change output format style with `--format FORMAT`.
 `FORMAT` is one of `git`, `inotifywait`, and `csv`.
 `--format FORMAT` should be specified *before* hash list file.
 
-#### `--format inotifywait`
+##### `--format inotifywait`
 
     EMPTY empty file
     DUMPLICATED duplicated file
     UNIQUE unique file
     UNKNOWN file (without `sha256` xattr, no read permission, etc)
 
-#### `--format csv`
+##### `--format csv`
 
 Like `--format inotifywait`, but separated with comma `,`, with path name quoted.
 
     EMPTY,"empty_file.txt"
     UNIQUE,"A file containing spaces and ""double quotes"""
 
-#### `--format your_own`
+##### `--format your_own`
 
 You need to write a formatting function typed `String(Status, Path)`.
 Then register it in command line option parsing code in `run()`.
+
+### scrub/tag
+
+    $SHATTR_COMMAND -s
+    $SHATTR_COMMAND -t
+
+Will compute checksums for all files under current directory (recursively).
+
+Unlike `shatag`, `-t` will warn if checksum changes.
 
 Contribute
 ----------
