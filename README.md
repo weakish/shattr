@@ -20,14 +20,20 @@ Why
 Installation
 --------------
 
-### With `Ceylon`
+### With `ceylon`
 
 If you have `Ceylon` installed, you can download the `.car` archive (`< 4K`) at
-[Releases] and put it into [Ceylon module repository][repo].
+[Releases][] and put it into [Ceylon module repository][repo].
+If your `ceylon` is recent enough, you can package it to a jar file via `ceylon --fat-jar`.
+Running with `java -jar` starts faster than `ceylon run`.
+
+[Releases]: https://github.com/weakish/shattr/releases
+[repo]: http://ceylon-lang.org/documentation/1.2/reference/repository/
 
 ### With `java` directly
 
-If you have Java Runtime (7+) installed , but not Ceylon, you can download the fat jar file (`3.2M`).
+If you have Java Runtime (7+) installed , but not Ceylon,
+you can download the fat jar file (`3.2M`).
 
 ### Compile manually
 
@@ -35,9 +41,6 @@ Clone this repository and run `ceylon compile`.
 
 Tested with `Ceylon 1.2+`.
 May work with older versions.
-
-[Releases]: https://github.com/weakish/shattr/releases
-[repo]: http://ceylon-lang.org/documentation/1.2/reference/repository/
 
 Usage
 ------
@@ -77,29 +80,30 @@ sqlite3 -noheader -csv ~/.shatagdb "select hash from contents;" > hashlist.csv
 
 By default we use a git status style output.
 You can change output format style with `--format FORMAT`.
-`FORMAT` is one of `git`, `inotifywait`, and `cvs`.
+`FORMAT` is one of `git`, `inotifywait`, and `csv`.
 `--format FORMAT` should be specified *before* hash list file.
 
 #### `--format inotifywait`
 
     EMPTY empty file
-    DUMPLICATED duplicatd file
+    DUMPLICATED duplicated file
     UNIQUE unique file
     UNKNOWN file (without `sha256` xattr, no read permission, etc)
 
-#### `--format cvs`
+#### `--format csv`
 
 Like `--format inotifywait`, but separated with comma `,`, with path name quoted.
 
     EMPTY,"empty_file.txt"
     UNIQUE,"A file containing spaces and ""double quotes"""
 
-#### `--format yourown`
+#### `--format your_own`
 
 You need to write a formatting function typed `String(Status, Path)`.
 Then register it in command line option parsing code in `run()`.
 
-### Contribute
+Contribute
+----------
 
 Send pull requests at <https://github.com/weakish/shattr>.
 
@@ -148,4 +152,5 @@ License
 --------
 
 0BSD.
+
 
