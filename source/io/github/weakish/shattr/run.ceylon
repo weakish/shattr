@@ -366,6 +366,7 @@ shared void run() {
         print("Usage:
                    ``commandLineUsage``
                    ``formatDescription``");
+        process.exit(0);
     }
     case ("-l" | "--lookup") {
         switch (lookupOption = process.arguments[1])
