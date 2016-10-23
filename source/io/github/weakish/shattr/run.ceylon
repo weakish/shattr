@@ -248,7 +248,22 @@ void tag(Path path) {
     switch (ts = readTs(path))
     case (is String) {
         if (is_outdated(path, ts)) {
-            writeTags(path);
+            switch (oldSha = readSha(path))
+            case (is String) {
+                switch (newSha = sha256FileHex(path))
+                case (is String) {
+                    if (oldSha != newSha) {
+                        log.warn("``path`` modified! Old: ``oldSha``. New: ``newSha``");
+                        writeXattr("shatag.sha256", newSha, path);
+                    }
+                }
+                case (is Null) {
+                    log.error(() => "Failed to calculate sha256sum for ``path``");
+                }
+            }
+            case (is Null) {
+                log.error(() => "Failed to read `user.shatag.sha256` from ``path``.");
+            }
         }
     }
     case (is Null) {
