@@ -11,7 +11,9 @@ import ceylon.file {
     File,
     home,
     parsePath,
-    Nil
+    Nil,
+    Directory,
+    Link
 }
 import ceylon.interop.java {
     javaClass
@@ -188,6 +190,72 @@ object scrubVisitor extends Visitor() {
     file(File f) => reportInconsistencies(f.path);
 }
 
+object tagVisitor extends Visitor() {
+    file(File f) => tag(f.path);
+}
+"Returns false if path is not modified or path is a link."
+throws(`class Exception`, "when path is a directory or not exist")
+Boolean is_outdated(Path path, String ts) {
+    switch (file = path.resource)
+    case (is File) {
+        if (file.lastModifiedMilliseconds.string == ts) {
+            return false;
+        } else {
+            // Handles shatag ts format difference
+            if (ts.endsWith(".0")) {
+                if (file.lastModifiedMilliseconds.string == ts.replace(".0", "000")) {
+                    return false;
+                } else {
+                    return true;
+                }
+            } else {
+                return true;
+            }
+        }
+    }
+    case (is Nil|Directory) {
+        throw Exception("Report bugs at https://github.com/weakish/shattr/issues/");
+    }
+    case (is Link) {
+        log.info("Skip link ``path``.");
+        return false;
+    }
+}
+
+void writeSha(Path path) {
+    switch (sha = sha256FileHex(path))
+    case (is String) {
+        writeXattr("shatag.sha256", sha, path);
+    }
+    case (is Null) {
+        log.error(() => "Failed to calculate sha256sum for ``path``");
+    }
+}
+void writeTs(Path path) {
+    if (is File file = path.resource) {
+        writeXattr("shatag.ts", file.lastModifiedMilliseconds.string, path);
+    }
+}
+void writeTags(Path path) {
+    // Write the checksum before the timestamp,
+    // so in case of accidental parallel operation,
+    // shattr will rather compute unneccesary checksums than consider an old checksum valid.
+    writeSha(path);
+    writeTs(path);
+}
+
+void tag(Path path) {
+    switch (ts = readTs(path))
+    case (is String) {
+        if (is_outdated(path, ts)) {
+            writeTags(path);
+        }
+    }
+    case (is Null) {
+        writeTags(path);
+    }
+}
+
 "Read file <hashList> into RAM,
  which contains all SHA-256 hashes, sorted."
 TreeSet<String> readHashList() {
@@ -235,13 +303,23 @@ void reportDuplicated(Path path, TreeSet<String> hashList) {
 }
 "Given a valid file path, read its `user.shatag.sha256` xattr."
 String? readSha(Path path) {
+    return readXattr("shatag.sha256", path);
+}
+"Given a valid file path, read its `user.shatag.ts` xattr."
+String? readTs(Path path) {
+    return readXattr("shatag.ts", path);
+}
+String? readXattr(String tag, Path path) {
     UserDefinedFileAttributeView view = getXattrView(path);
-    String tag = "shatag.sha256";
     if (exists size = getXattrSize(view, tag)) {
         return getXattr(tag, size, view);
     } else {
         return null;
     }
+}
+void writeXattr(String tag, String val, Path path) {
+    UserDefinedFileAttributeView view = getXattrView(path);
+    view.write(tag, Charset.defaultCharset().encode(val));
 }
 UserDefinedFileAttributeView getXattrView(Path path) {
     value filePath = Paths.get(path.string);
@@ -261,8 +339,8 @@ String getXattr(String tag, Integer size, UserDefinedFileAttributeView view) {
     ByteBuffer buffer = ByteBuffer.allocate(size);
     view.read(tag, buffer);
     buffer.flip();
-    String sha256 = Charset.defaultCharset().decode(buffer).string;
-    return sha256;
+    String xattr = Charset.defaultCharset().decode(buffer).string;
+    return xattr;
 }
 Boolean isDuplicated(String sha256, TreeSet<String> hashList) {
     return if (hashList.contains(sha256)) then true else false;
@@ -278,6 +356,7 @@ shared void run() {
     String commandLineUsage
             = "java -jar shattr.jar --lookup [--format FORMAT] [hash_list_file]
                                     --scrub
+                                    --tag";
     String formatDescription
             = "FORMAT is one of `git`, `inotifywait`, and `cvs`.";
     Visitor visitor;
@@ -308,14 +387,16 @@ shared void run() {
             hashListPath = process.arguments[3] else hashListPath;
         }
         else {
-            log.fatal(formatDescription);
-            System.exit(64);
+            formatter = git;
+            hashListPath = process.arguments[1] else hashListPath;
         }
         visitor = lookupVisitor;
     }
     case ("-s" | "--scrub") {
         visitor = scrubVisitor;
     }
+    case ("-t" | "--tag") {
+        visitor = tagVisitor;
     }
     else {
         visitor = noVisitor;
