@@ -48,7 +48,8 @@ import java.nio.file.attribute {
     UserDefinedFileAttributeView
 }
 
-String? sha256FileHex(Path filePath) {
+"Returns sha256 hex string."
+shared String? sha256FileHex(Path filePath) {
     value digester = sha256();
     Byte[] sha256sum;
     if (is File file = filePath.resource) {
@@ -130,7 +131,9 @@ void printer(Status status, Path path,
     Anything(String) writer = process.writeLine) {
     writer(formatter(status, path));
 }
-Boolean isXattrEnabled() {
+
+"Test if xattr is enabled on the filesystem."
+shared Boolean isXattrEnabled() {
     value filePath = Paths.get(current.string);
     FileStore store = Files.getFileStore(filePath);
     if (store.supportsFileAttributeView("user")) {
@@ -193,6 +196,7 @@ object scrubVisitor extends Visitor() {
 object tagVisitor extends Visitor() {
     file(File f) => tag(f.path);
 }
+
 "Returns false if path is not modified or path is a link."
 throws(`class Exception`, "when path is a directory or not exist")
 Boolean is_outdated(Path path, String ts) {
@@ -222,7 +226,8 @@ Boolean is_outdated(Path path, String ts) {
     }
 }
 
-void writeSha(Path path) {
+"Write `user.shatag.sha256` xattr."
+shared void writeSha(Path path) {
     switch (sha = sha256FileHex(path))
     case (is String) {
         writeXattr("shatag.sha256", sha, path);
@@ -231,12 +236,16 @@ void writeSha(Path path) {
         log.error(() => "Failed to calculate sha256sum for ``path``");
     }
 }
-void writeTs(Path path) {
+
+"Write `user.shatag.ts` xattr."
+shared void writeTs(Path path) {
     if (is File file = path.resource) {
         writeXattr("shatag.ts", file.lastModifiedMilliseconds.string, path);
     }
 }
-void writeTags(Path path) {
+
+"Write `sha256` and `ts` tags."
+shared void writeTags(Path path) {
     // Write the checksum before the timestamp,
     // so in case of accidental parallel operation,
     // shattr will rather compute unneccesary checksums than consider an old checksum valid.
