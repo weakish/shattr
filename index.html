@@ -31,68 +31,218 @@
     <!-- MAIN CONTENT -->
     <div id="main_content_wrap" class="outer">
       <section id="main_content" class="inner">
-<h1 id="shattr">shattr</h1>
+        <h1>
+<a id="shattr" class="anchor" href="#shattr" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>shattr</h1>
+
 <p>A <a href="https://bitbucket.org/maugier/shatag">shatag</a> clone in Ceylon.</p>
-<h2 id="status">Status</h2>
-<p>A lot of features unimplemented. Usable for implemented feature.</p>
-<h2 id="why">Why</h2>
-<p><code>shatag -rl</code> is slow since it needs to query SQL database for every file. <code>shattr</code> reads all SHA-256 checksums in memory instead.</p>
-<h2 id="installation">Installation</h2>
-<h3 id="with-ceylon">With <code>Ceylon</code></h3>
-<p>If you have <code>Ceylon</code> installed, you can download the <code>.car</code> archive (<code>&lt; 4K</code>) at <a href="https://github.com/weakish/shattr/releases">Releases</a> and put it into <a href="http://ceylon-lang.org/documentation/1.2/reference/repository/">Ceylon module repository</a>.</p>
-<h3 id="with-java-directly">With <code>java</code> directly</h3>
-<p>If you have Java Runtime (7+) installed , but not Ceylon, you can download the fat jar file (<code>3.2M</code>).</p>
-<h3 id="compile-manually">Compile manually</h3>
+
+<h2>
+<a id="status" class="anchor" href="#status" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Status</h2>
+
+<p>Basic features implemented:</p>
+
+<ul>
+<li>
+<code>--lookup</code>: Lookup for duplicates.</li>
+<li>
+<code>--scrub</code>: Recompute checksums to detect silent corruption.</li>
+<li>
+<code>--tag</code>: Compute new checksums for files that don't have one, or when it is outdated.</li>
+</ul>
+
+<h2>
+<a id="why" class="anchor" href="#why" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Why</h2>
+
+<p><code>shatag -rl</code> is slow since it needs to query SQL database for every file.
+<code>shattr</code> reads all SHA-256 checksums in memory instead.</p>
+
+<h2>
+<a id="installation" class="anchor" href="#installation" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Installation</h2>
+
+<h3>
+<a id="with-ceylon" class="anchor" href="#with-ceylon" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>With <code>ceylon</code>
+</h3>
+
+<p>If you have <code>Ceylon</code> installed, you can download the <code>.car</code> archive (<code>&lt; 4K</code>) at
+<a href="https://github.com/weakish/shattr/releases">Releases</a> and put it into <a href="http://ceylon-lang.org/documentation/1.2/reference/repository/">Ceylon module repository</a>.
+If your <code>ceylon</code> is recent enough, you can package it to a jar file via <code>ceylon --fat-jar</code>.
+Running with <code>java -jar</code> starts faster than <code>ceylon run</code>.</p>
+
+<h3>
+<a id="with-java-directly" class="anchor" href="#with-java-directly" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>With <code>java</code> directly</h3>
+
+<p>If you have Java Runtime (7+) installed , but not Ceylon,
+you can download the fat jar file (<code>3.2M</code>).</p>
+
+<h3>
+<a id="compile-manually" class="anchor" href="#compile-manually" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Compile manually</h3>
+
 <p>Clone this repository and run <code>ceylon compile</code>.</p>
-<p>Tested with <code>Ceylon 1.2+</code>. May work with older versions.</p>
-<h2 id="usage">Usage</h2>
-<pre><code>$SHATTR_COMMAND PATH_TO_HASHLIST</code></pre>
+
+<p>Tested with <code>Ceylon 1.2+</code>.
+May work with older versions.</p>
+
+<h2>
+<a id="usage" class="anchor" href="#usage" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Usage</h2>
+
+<h3>
+<a id="lookup" class="anchor" href="#lookup" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Lookup</h3>
+
+<pre><code>$SHATTR_COMMAND -l PATH_TO_HASHLIST
+</code></pre>
+
 <p>will print status of files under the current directory.</p>
+
 <pre><code>N empty file
 D duplicated file
 U unique file
-? unknown file (without `sha256` xattr, no read permission, etc)</code></pre>
+? unknown file (without `sha256` xattr, no read permission, etc)
+</code></pre>
+
 <p><code>$SHATTR_COMMAND</code> is one of:</p>
+
 <ul>
-<li><code>ceylon run io.github.weakish.shattr</code> if using <code>Ceylon</code>;</li>
-<li><code>java -jar /path/to/io.github.weakish.shattr-0.2.0.jar</code> if using <code>java</code> directly.</li>
+<li>
+<code>ceylon run io.github.weakish.shattr</code> if using <code>Ceylon</code>;</li>
+<li>
+<code>java -jar /path/to/io.github.weakish.shattr-0.2.0.jar</code> if using <code>java</code> directly.</li>
 </ul>
-<p>If <code>PATH_TO_HASHLIST</code> is not specified, <code>shattr</code> will use <code>~/.shatagdb-hash-list.txt</code>.</p>
-<p><code>PATH_TO_HASHLIST</code> is a text file, containing all SHA256 hashes of known files, one per line.</p>
-<p>For example, if using <code>shatag</code> with an sqlite3 backend, <code>PATH_TO_HASHLIST</code> can be produced via:</p>
-<div class="sourceCode"><pre class="sourceCode sh"><code class="sourceCode bash"><span class="kw">sqlite3</span> -noheader -csv ~/.shatagdb <span class="st">&quot;select hash from contents;&quot;</span> <span class="kw">&gt;</span> hashlist.csv</code></pre></div>
-<h2 id="contribute">Contribute</h2>
-<p>Send pull requests at <a href="https://github.com/weakish/shattr" class="uri">https://github.com/weakish/shattr</a>.</p>
-<h3 id="coding-style">Coding style</h3>
-<h4 id="prefer-if-.-then-.-else-.-to-.-then-.-else-.">Prefer <code>if . then . else .</code> to <code>. then . else .</code></h4>
+
+<p>If <code>PATH_TO_HASHLIST</code> is not specified,
+<code>shattr</code> will use <code>~/.shatagdb-hash-list.txt</code>.</p>
+
+<h4>
+<a id="hash-list-format" class="anchor" href="#hash-list-format" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Hash list format</h4>
+
+<p><code>PATH_TO_HASHLIST</code> is a text file,
+containing all SHA256 hashes of known files, one per line.</p>
+
+<p>For example, if using <code>shatag</code> with an sqlite3 backend,
+<code>PATH_TO_HASHLIST</code> can be produced via:</p>
+
+<div class="highlight highlight-source-shell"><pre>sqlite3 -noheader -csv <span class="pl-k">~</span>/.shatagdb <span class="pl-s"><span class="pl-pds">"</span>select hash from contents;<span class="pl-pds">"</span></span> <span class="pl-k">&gt;</span> hashlist.csv</pre></div>
+
+<h4>
+<a id="customize-output" class="anchor" href="#customize-output" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Customize output</h4>
+
+<p>By default we use a git status style output.
+You can change output format style with <code>--format FORMAT</code>.
+<code>FORMAT</code> is one of <code>git</code>, <code>inotifywait</code>, and <code>csv</code>.
+<code>--format FORMAT</code> should be specified <em>before</em> hash list file.</p>
+
+<h5>
+<a id="--format-inotifywait" class="anchor" href="#--format-inotifywait" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a><code>--format inotifywait</code>
+</h5>
+
+<pre><code>EMPTY empty file
+DUMPLICATED duplicated file
+UNIQUE unique file
+UNKNOWN file (without `sha256` xattr, no read permission, etc)
+</code></pre>
+
+<h5>
+<a id="--format-csv" class="anchor" href="#--format-csv" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a><code>--format csv</code>
+</h5>
+
+<p>Like <code>--format inotifywait</code>, but separated with comma <code>,</code>, with path name quoted.</p>
+
+<pre><code>EMPTY,"empty_file.txt"
+UNIQUE,"A file containing spaces and ""double quotes"""
+</code></pre>
+
+<h5>
+<a id="--format-your_own" class="anchor" href="#--format-your_own" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a><code>--format your_own</code>
+</h5>
+
+<p>You need to write a formatting function typed <code>String(Status, Path)</code>.
+Then register it in command line option parsing code in <code>run()</code>.</p>
+
+<h3>
+<a id="scrubtag" class="anchor" href="#scrubtag" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>scrub/tag</h3>
+
+<pre><code>$SHATTR_COMMAND -s
+$SHATTR_COMMAND -t
+</code></pre>
+
+<p>Will compute checksums for all files under current directory (recursively).</p>
+
+<p>Unlike <code>shatag</code>, <code>-t</code> will warn if checksum changes.</p>
+
+<h2>
+<a id="contribute" class="anchor" href="#contribute" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Contribute</h2>
+
+<p>Send pull requests at <a href="https://github.com/weakish/shattr">https://github.com/weakish/shattr</a>.</p>
+
+<h3>
+<a id="coding-style" class="anchor" href="#coding-style" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Coding style</h3>
+
+<h4>
+<a id="prefer-if--then--else--to--then--else-" class="anchor" href="#prefer-if--then--else--to--then--else-" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Prefer <code>if . then . else .</code> to <code>. then . else .</code>
+</h4>
+
 <p>We feel <code>A then B else C</code> is confusing.</p>
+
 <p>Readers may think <code>A then B else C</code> is <code>A ? B : C</code> in other languages, but they are <strong>not the same</strong>:</p>
-<ol style="list-style-type: decimal">
-<li><p><code>A then B else C</code> is actually <code>(A then B) else C</code>:</p>
+
+<ol>
+<li>
+<p><code>A then B else C</code> is actually <code>(A then B) else C</code>:</p>
+
 <ul>
-<li><code>A then B</code> evaluates to <code>B</code> if <code>A</code> is not <code>null</code>, otherwise evaluates to <code>null</code>.</li>
-<li><code>X else Y</code> evaluates to <code>X</code> if <code>X</code> is not <code>null</code>, otherwise evaluates to <code>Y</code>.</li>
-</ul></li>
+<li>
+<code>A then B</code> evaluates to <code>B</code> if <code>A</code> is not <code>null</code>, otherwise evaluates to <code>null</code>.</li>
+<li>
+<code>X else Y</code> evaluates to <code>X</code> if <code>X</code> is not <code>null</code>, otherwise evaluates to <code>Y</code>.</li>
+</ul>
+</li>
 <li><p>Thus the type of <code>B</code> is <code>T given T satisfies Object</code>, i.e. requires to not be <code>null</code>.</p></li>
 </ol>
+
 <p>I think <code>if (A) then B else C</code> is much cleaner.</p>
-<h4 id="avoid-i-i">Avoid <code>i++</code>, <code>++i</code></h4>
-<p>Compared to <code>i+=1</code>, <code>i++</code> only saves one character.</p>
+
+<h4>
+<a id="only-use-i-to-increase-i" class="anchor" href="#only-use-i-to-increase-i" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Only use <code>i++</code> to increase <code>i</code>.</h4>
+
 <p><code>y=i++</code> and <code>y=++i</code> is really confusing to me.</p>
+
+<p>So I prefer to only uses <code>i++</code> to increase <code>i</code>, e.g. in a while loop.
+I think a meaningful evaluated value of <code>i++</code> should be <code>void</code>
+if the a programming language allows <code>++</code>.</p>
+
 <p>Same applies to <code>i--</code> and <code>--i</code>.</p>
-<h4 id="prefer-functions-to-classes">Prefer functions to classes</h4>
-<p>Currently there is no class declaration in code source.</p>
+
+<h4>
+<a id="prefer-functions-to-classes" class="anchor" href="#prefer-functions-to-classes" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Prefer functions to classes</h4>
+
 <p>We prefer to declare classes for new types (or type aliases).</p>
-<h4 id="other">Other</h4>
+
+<h4>
+<a id="other" class="anchor" href="#other" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Other</h4>
+
 <p>If you disagree the above, file an issue.</p>
+
 <p>Send pull requests to add new coding style.</p>
-<p>Please do not add formatting style such as <code>use two spaces</code> and <code>closing braces on their own line</code>. Formatting style is unlikely to affect readability of code, and can be auto adjusted via <code>ceylon format</code>.</p>
-<h2 id="license">License</h2>
+
+<p>Please do not add formatting style such as <code>use two spaces</code> and <code>closing braces on their own line</code>.
+Formatting style is unlikely to affect readability of code,
+and can be auto adjusted via <code>ceylon format</code>.</p>
+
+<h2>
+<a id="license" class="anchor" href="#license" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>License</h2>
+
 <p>0BSD.</p>
+      </section>
+    </div>
+
     <!-- FOOTER  -->
     <div id="footer_wrap" class="outer">
       <footer class="inner">
         <p class="copyright">shattr maintained by <a href="https://github.com/weakish">weakish</a></p>
+        <p>Published with <a href="https://pages.github.com">GitHub Pages</a></p>
       </footer>
+    </div>
+
+    
+
   </body>
 </html>
